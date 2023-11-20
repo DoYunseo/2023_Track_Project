@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request,jsonify
 from werkzeug.utils import secure_filename
 import yt_dlp
 import os
@@ -16,7 +16,7 @@ def saveImage():
         name, extension = os.path.splitext(img.filename)
         extension = '.png'
         img.save('static/' + secure_filename('image') + extension)
-        return 'static/' + secure_filename('image') + extension
+        return jsonify({"path": 'static/' + secure_filename('image') + extension})
 
 @app.route('/video/saveVideo', methods = ['GET', 'POST'])
 def saveVideo():
@@ -25,7 +25,7 @@ def saveVideo():
         name, extension = os.path.splitext(vid.filename)
         extension = '.mp4'
         vid.save('static/' + secure_filename('video') + extension)
-        return 'static/' + secure_filename('video') + extension
+        return jsonify({"path":'static/' + secure_filename('video') + extension})
 
 @app.route('/video/YouTubeVideo', methods = ['GET', 'POST'])
 def saveYouTube():
@@ -37,7 +37,7 @@ def saveYouTube():
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
-        return 'static/video.mp4'
+        return jsonify({"path":'static/video.mp4'})
 
 
 @app.route('/record/saveRecord', methods = ['GET', 'POST'])
@@ -47,7 +47,7 @@ def saveRecord():
         name, extension = os.path.splitext(rec.filename)
         extension = '.m4a'
         rec.save('static/' + secure_filename('record') + extension)
-        return 'static/' + secure_filename('record') + extension
+        return jsonify({"path":'static/' + secure_filename('record') + extension})
     
 @app.route('/ai/getFile', methods=['GET'])
 def getFile():
@@ -56,7 +56,7 @@ def getFile():
     video_path = path + 'video.mp4'
     rec_path = path + 'record.m4a'
     if os.path.isfile(img_path) and os.path.isfile(video_path) and os.path.isfile(rec_path):
-        return test.data_preprocessing(path)
+        return jsonify({"path":test.data_preprocessing(path)})
 
 
 @app.route('/ai/deleteImage', methods=['GET'])
