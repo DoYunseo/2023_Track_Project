@@ -1,78 +1,87 @@
-from flask import Flask, request,jsonify
+from flask import Flask, request, jsonify
 from werkzeug.utils import secure_filename
 import yt_dlp
 import os
 import test
+import datetime
+import shutil
 
 app = Flask(__name__)
 
-if not (os.path.isdir('static')):
-    os.makedirs('static')
+@app.route('/ai/saveFile', methods = ['GET', 'POST'])
+def saveFile():
+    timestamp = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
+    path = 'static/' + timestamp + '/'
+    if not (os.path.isdir(path)):
+        os.makedirs(path)
 
-@app.route('/image/saveImage', methods = ['GET', 'POST'])
-def saveImage():
     if request.method == 'POST':
         img = request.files['img']
-        name, extension = os.path.splitext(img.filename)
-        extension = '.png'
-        img.save('static/' + secure_filename('image') + extension)
-        return jsonify({"path": 'static/' + secure_filename('image') + extension})
+        img_name, img_extension = os.path.splitext(img.filename)
+        img_extension = '.png'
+        img.save(path + secure_filename('image') + img_extension)
 
-@app.route('/video/saveVideo', methods = ['GET', 'POST'])
-def saveVideo():
-    if request.method == 'POST':
         vid = request.files['vid']
-        name, extension = os.path.splitext(vid.filename)
-        extension = '.mp4'
-        vid.save('static/' + secure_filename('video') + extension)
-        return jsonify({"path":'static/' + secure_filename('video') + extension})
+        vid_name, vid_extension = os.path.splitext(vid.filename)
+        vid_extension = '.mp4'
+        vid.save(path + secure_filename('video') + vid_extension)
+        
+        rec = request.files['rec']
+        rec_name, rec_extension = os.path.splitext(rec.filename)
+        rec_extension = '.m4a'
+        rec.save(path + secure_filename('record') + rec_extension)
 
-@app.route('/video/YouTubeVideo', methods = ['GET', 'POST'])
+        img_path = path + '/image.png'
+        video_path = path + '/video.mp4'
+        rec_path = path + '/record.m4a'
+
+        if os.path.isfile(img_path) and os.path.isfile(video_path) and os.path.isfile(rec_path):
+            test.data_preprocessing(img_path, video_path, rec_path)
+
+        if os.path.exists('static/cover/test.txt'):
+            shutil.rmtree(path)
+            
+        return "completed"
+    
+
+@app.route('/ai/saveFile-YouTube', methods = ['GET', 'POST'])
 def saveYouTube():
+    timestamp = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
+    path = 'static/' + timestamp + '/'
+    if not (os.path.isdir(path)):
+        os.makedirs(path)
+
     if request.method == 'POST':
+        img = request.files['img']
+        img_name, img_extension = os.path.splitext(img.filename)
+        img_extension = '.png'
+        img.save(path + secure_filename('image') + img_extension)
+
         url = request.form['url']
         ydl_opts = {
         'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best',
-        'outtmpl': 'static/video.mp4'
+        'outtmpl': path + 'video.mp4'
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
-        return jsonify({"path":'static/video.mp4'})
 
-
-@app.route('/record/saveRecord', methods = ['GET', 'POST'])
-def saveRecord():
-    if request.method == 'POST':
         rec = request.files['rec']
-        name, extension = os.path.splitext(rec.filename)
-        extension = '.m4a'
-        rec.save('static/' + secure_filename('record') + extension)
-        return jsonify({"path":'static/' + secure_filename('record') + extension})
+        rec_name, rec_extension = os.path.splitext(rec.filename)
+        rec_extension = '.m4a'
+        rec.save(path + secure_filename('record') + rec_extension)
+
+        img_path = path + 'image.png'
+        video_path = path + 'video.mp4'
+        rec_path = path + 'record.m4a'
+
+        if os.path.isfile(img_path) and os.path.isfile(video_path) and os.path.isfile(rec_path):
+            test.data_preprocessing(img_path, video_path, rec_path)
+
+        if os.path.exists('static/cover/test.txt'):
+            shutil.rmtree(path)
+
+    return "completed"
     
-@app.route('/ai/getFile', methods=['GET'])
-def getFile():
-    path = 'static/'
-    img_path = path + 'image.png'
-    video_path = path + 'video.mp4'
-    rec_path = path + 'record.m4a'
-    if os.path.isfile(img_path) and os.path.isfile(video_path) and os.path.isfile(rec_path):
-        return jsonify({"path":test.data_preprocessing(path)})
-
-
-@app.route('/ai/deleteImage', methods=['GET'])
-def deleteImage():
-    os.remove('static/image.png')
-    return "Image deleted successfully"
-
-@app.route('/ai/deleteVideo', methods=['GET'])
-def deleteVideo():
-    os.remove('static/video.mp4')
-    return "Video deleted successfully"
-
-@app.route('/ai/deleteRecord', methods=['GET'])
-def deleteRecord():
-    os.remove('static/record.m4a')
-    return "record deleted successfully"
 
 @app.route('/ai/deleteCover', methods=['GET'])
 def deleteCover():
